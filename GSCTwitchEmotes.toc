@@ -1,0 +1,10 @@
+## Interface: 16001
+## Title: GSC Twitch Emotes
+## Notes: Custom static and animated emote pack for Twitch Emotes v2. Runs alongside Giga Twitch Emotes.
+## Version: 1.0.0
+## SavedVariables: GSCTwitchEmotes_Settings
+## Dependencies: TwitchEmotes
+
+emotes.lua
+animation.lua
+main.lua
