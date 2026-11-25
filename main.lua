@@ -2,7 +2,7 @@ local addonName = ...
 
 local BUTTON_NAME = "GSCTwitchEmotes"
 local LDB_BUTTON_NAME = "LibDBIcon10_" .. BUTTON_NAME
-local ICON_PATH = "Interface\\AddOns\\TwitchEmotes\\Emotes\\1337.tga"
+local ICON_PATH = "Interface\\AddOns\\GSCTwitchEmotes\\emotes\\Guild.tga"
 
 local VALID_MODES = {
     always = true,
@@ -56,7 +56,7 @@ local browserPageText = nil
 local browserPrevButton = nil
 local browserNextButton = nil
 
-local OWN_TAG_PATTERN = "(|TInterface\\AddOns\\GSCTwitchEmotes\\.-%.tga:%d+:%d+|t)"
+local OWN_TAG_PATTERN = "(|TInterface\\AddOns\\GSCTwitchEmotes\\.-|t)"
 
 local SetMinimapMode -- forward declaration
 local ToggleEmoteBrowser -- forward declaration
@@ -113,7 +113,9 @@ local function CopyAnimationMetadata()
     if type(GSCTwitchEmotes_animation_metadata) ~= "table" then return end
 
     for path, meta in pairs(GSCTwitchEmotes_animation_metadata) do
-        TwitchEmotes_animation_metadata[path] = meta
+        if type(meta) ~= "table" or not meta.grid then
+            TwitchEmotes_animation_metadata[path] = meta
+        end
     end
 end
 
@@ -427,6 +429,7 @@ local function UpdateEmoteBrowserPage()
 
         if not name then
             cell.frame:Hide()
+            cell.animMeta = nil
         else
             cell.frame:Show()
 
@@ -434,14 +437,48 @@ local function UpdateEmoteBrowserPage()
             local texturePath = type(path) == "string" and path:match("^(.-%.tga)") or nil
             cell.icon:SetTexture(texturePath)
 
+            -- Keep wide emotes at their real shape (tag is path:height:width).
+            local tagH, tagW = nil, nil
+            if type(path) == "string" then
+                tagH, tagW = path:match(":(%d+):(%d+)$")
+            end
+            local iconAspect = 1
+            if tagH and tagW and tonumber(tagH) > 0 then
+                iconAspect = tonumber(tagW) / tonumber(tagH)
+            end
+            local iconWidth = math.min(math.floor(BROWSER_ICON_SIZE * iconAspect + 0.5), BROWSER_CELL_WIDTH - 12)
+            cell.icon:SetSize(iconWidth, BROWSER_ICON_SIZE)
+
             local meta = texturePath
                 and ((GSCTwitchEmotes_animation_metadata and GSCTwitchEmotes_animation_metadata[texturePath])
                     or (TwitchEmotes_animation_metadata and TwitchEmotes_animation_metadata[texturePath]))
                 or nil
 
-            if type(meta) == "table" and meta.nFrames and meta.imageHeight and meta.imageHeight > 0 then
+            -- Remember animation metadata so the browser OnUpdate can advance frames.
+            cell.animMeta = nil
+            if type(meta) == "table" and meta.nFrames and meta.nFrames > 1 and meta.imageHeight and meta.imageHeight > 0 then
+                cell.animMeta = meta
+            end
+
+            if type(meta) == "table" and meta.grid and meta.imageWidth and meta.imageHeight then
+                local frameWidth = tonumber(meta.frameWidth) or 32
                 local frameHeight = tonumber(meta.frameHeight) or 32
-                cell.icon:SetTexCoord(0, 1, 0, frameHeight / meta.imageHeight)
+                cell.icon:SetTexCoord(
+                    0,
+                    frameWidth / meta.imageWidth,
+                    0,
+                    frameHeight / meta.imageHeight
+                )
+                cell.animMeta = nil -- grid sheets not animated in browser yet
+            elseif type(meta) == "table" and meta.nFrames and meta.imageHeight and meta.imageHeight > 0 then
+                local frameHeight = tonumber(meta.frameHeight) or 32
+                local pf = tonumber(meta.previewFrame) or 0
+                if pf < 0 or pf >= meta.nFrames then pf = 0 end
+                cell.icon:SetTexCoord(
+                    0, 1,
+                    (pf * frameHeight) / meta.imageHeight,
+                    ((pf + 1) * frameHeight) / meta.imageHeight
+                )
             else
                 cell.icon:SetTexCoord(0, 1, 0, 1)
             end
@@ -465,6 +502,42 @@ local function UpdateEmoteBrowserPage()
     end
 end
 
+
+local browserAnimElapsed = 0
+local BROWSER_ANIM_INTERVAL = 0.033
+
+local function AnimateBrowserEmotes(elapsed)
+    if not emoteBrowser or not emoteBrowser:IsShown() then
+        return
+    end
+
+    browserAnimElapsed = browserAnimElapsed + (elapsed or 0)
+    if browserAnimElapsed < BROWSER_ANIM_INTERVAL then
+        return
+    end
+    browserAnimElapsed = 0
+
+    local now = GetTime()
+    for i = 1, BROWSER_PER_PAGE do
+        local cell = emoteCells[i]
+        local meta = cell and cell.animMeta
+        if meta and cell.icon and cell.frame and cell.frame:IsShown() then
+            local nFrames = tonumber(meta.nFrames) or 1
+            local frameHeight = tonumber(meta.frameHeight) or 32
+            local imageHeight = tonumber(meta.imageHeight) or (frameHeight * nFrames)
+            local framerate = tonumber(meta.framerate) or 18
+            if nFrames > 1 and imageHeight > 0 and framerate > 0 then
+                local frameIndex = math.floor(now * framerate) % nFrames
+                cell.icon:SetTexCoord(
+                    0, 1,
+                    (frameIndex * frameHeight) / imageHeight,
+                    ((frameIndex + 1) * frameHeight) / imageHeight
+                )
+            end
+        end
+    end
+end
+
 ToggleEmoteBrowser = function()
     if not emoteBrowser then
         emoteBrowser = CreateFrame("Frame", "GSCTwitchEmotesBrowser", UIParent, "BackdropTemplate")
@@ -479,6 +552,9 @@ ToggleEmoteBrowser = function()
         emoteBrowser:RegisterForDrag("LeftButton")
         emoteBrowser:SetScript("OnDragStart", emoteBrowser.StartMoving)
         emoteBrowser:SetScript("OnDragStop", emoteBrowser.StopMovingOrSizing)
+        emoteBrowser:SetScript("OnUpdate", function(_, elapsed)
+            AnimateBrowserEmotes(elapsed)
+        end)
         emoteBrowser:SetScript("OnMouseWheel", function(_, delta)
             if delta > 0 then
                 if currentEmotePage > 1 then
@@ -766,6 +842,26 @@ local function InstallMinimapButton()
     InstallHoverHooks()
 end
 
+local function BuildGridFrameString(path, meta, framenum, displayHeight, displayWidth)
+    local cols = tonumber(meta.cols) or 1
+    local rows = tonumber(meta.rows) or 1
+    local frameWidth = tonumber(meta.frameWidth) or 32
+    local frameHeight = tonumber(meta.frameHeight) or 32
+    local imageWidth = tonumber(meta.imageWidth) or (cols * frameWidth)
+    local imageHeight = tonumber(meta.imageHeight) or (rows * frameHeight)
+
+    local col = framenum % cols
+    local row = math.floor(framenum / cols) % rows
+    local left = col * frameWidth
+    local right = left + frameWidth
+    local top = row * frameHeight
+    local bottom = top + frameHeight
+
+    return "|T" .. path .. ":" .. displayHeight .. ":" .. displayWidth
+        .. ":0:0:" .. imageWidth .. ":" .. imageHeight
+        .. ":" .. left .. ":" .. right .. ":" .. top .. ":" .. bottom .. "|t"
+end
+
 -- Animates only GSCTwitchEmotes textures. Giga and the base animator keep
 -- handling their own paths; this wrapper is installed at PLAYER_LOGIN so it
 -- works no matter which extension addon loaded last.
@@ -778,9 +874,9 @@ local function ProcessOwnFontString(fontstring, widthOverride, heightOverride)
     if canaccessvalue and not canaccessvalue(txt) then return end
     if issecretvalue and issecretvalue(txt) then return end
 
-    local metadata = type(TwitchEmotes_animation_metadata) == "table"
-        and TwitchEmotes_animation_metadata
-        or GSCTwitchEmotes_animation_metadata
+    local metadata = type(GSCTwitchEmotes_animation_metadata) == "table"
+        and GSCTwitchEmotes_animation_metadata
+        or TwitchEmotes_animation_metadata
     if type(metadata) ~= "table" then return end
 
     local changed = false
@@ -804,10 +900,21 @@ local function ProcessOwnFontString(fontstring, widthOverride, heightOverride)
         local frameHeight = tonumber(animdata.frameHeight) or 32
         local frameString
 
-        if frameWidth > frameHeight and type(TwitchEmotes_BuildEmoteFrameStringWithDimensions) == "function" then
+        if animdata.grid then
             local h = tonumber(heightOverride)
             local displayHeight = (h and h > 0) and h or 28
-            local displayWidth = math.floor(displayHeight * frameWidth / frameHeight + 0.5)
+            local displayWidth = widthOverride or math.floor(
+                displayHeight * frameWidth / frameHeight + 0.5
+            )
+            frameString = BuildGridFrameString(
+                imagepath, animdata, framenum, displayHeight, displayWidth
+            )
+        elseif math.abs((tonumber(animdata.aspect) or (frameWidth / frameHeight)) - 1) > 0.03
+            and type(TwitchEmotes_BuildEmoteFrameStringWithDimensions) == "function" then
+            local h = tonumber(heightOverride)
+            local displayHeight = (h and h > 0) and h or 28
+            local trueAspect = tonumber(animdata.aspect) or (frameWidth / frameHeight)
+            local displayWidth = math.floor(displayHeight * trueAspect + 0.5)
             frameString = SafeCall(
                 TwitchEmotes_BuildEmoteFrameStringWithDimensions,
                 imagepath, animdata, framenum, displayHeight, displayWidth

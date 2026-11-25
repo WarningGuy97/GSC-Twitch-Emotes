@@ -1,34 +1,183 @@
--- Animated emote metadata for GSCTwitchEmotes.
---
--- Animated emotes are vertical sprite sheets. Each frame is stacked top to bottom.
--- imageHeight should be frameHeight * nFrames.
--- Keep imageHeight <= 8192.
---
--- Add one AddAnimated(...) line per animated .tga, then add the emote to emotes.lua.
+-- Animated emote metadata for GSC Twitch Emotes.
+-- Generated from D:\Downloads\GSC_Emotes_TGA\EmoteData.lua.
+-- Files are vertical flipbooks: one column, one frame per row.
 
 local base = "Interface\\AddOns\\GSCTwitchEmotes\\emotes\\"
 
 GSCTwitchEmotes_animation_metadata = GSCTwitchEmotes_animation_metadata or {}
 
-local function AddAnimated(fileName, nFrames, frameWidth, frameHeight, framerate)
+-- The TGA height is padded up to a power of two, and the |T escape needs the
+-- real texture size (e.g. 13 frames of 32px -> 512, not 416).
+local function NextPow2(n)
+    local p = 1
+    while p < n do p = p * 2 end
+    return p
+end
+
+-- previewFrame: 0-based frame the emote browser shows (skips blank first frames).
+-- aspect: true width/height of the emote when it differs from the stored cell.
+local function AddAnimated(fileName, nFrames, frameWidth, frameHeight, framerate, previewFrame, aspect)
     local path = base .. fileName
     local meta = {
         nFrames = nFrames,
         frameWidth = frameWidth,
         frameHeight = frameHeight,
         imageWidth = frameWidth,
-        imageHeight = frameHeight * nFrames,
+        imageHeight = NextPow2(frameHeight * nFrames),
         framerate = framerate or 18,
+        previewFrame = previewFrame or 0,
+        aspect = aspect,
     }
 
     GSCTwitchEmotes_animation_metadata[path] = meta
 
-    -- Also publish into the base addon's shared metadata table.
     if type(TwitchEmotes_animation_metadata) == "table" then
         TwitchEmotes_animation_metadata[path] = meta
     end
 end
 
--- Examples:
--- AddAnimated("gscDance.tga", 8, 32, 32, 18)
--- AddAnimated("gscWideDance.tga", 10, 64, 32, 18)
+AddAnimated("seqBeans.tga", 32, 32, 32, 18, 0, nil)
+AddAnimated("seqChat.tga", 8, 32, 32, 50, 0, nil)
+AddAnimated("seqCope.tga", 16, 32, 32, 5, 0, nil)
+AddAnimated("seqDance.tga", 13, 32, 32, 12, 0, nil)
+AddAnimated("seqDeli.tga", 32, 32, 32, 18, 0, nil)
+AddAnimated("seqDerp.tga", 32, 32, 32, 28, 0, nil)
+AddAnimated("seqHacker.tga", 8, 32, 32, 50, 0, nil)
+AddAnimated("seqIgorbye.tga", 27, 32, 32, 14, 0, nil)
+AddAnimated("seqInsane.tga", 9, 32, 32, 17, 0, nil)
+AddAnimated("seqShoot.tga", 8, 32, 32, 10, 0, nil)
+AddAnimated("seqThinking.tga", 32, 32, 32, 9, 0, nil)
+AddAnimated("AINTNOWAY.tga", 32, 32, 32, 5, 0, nil)
+AddAnimated("AreYouSureAboutThat.tga", 32, 32, 32, 5, 4, nil)
+AddAnimated("Arrive.tga", 32, 32, 32, 7, 0, nil)
+AddAnimated("BANGER.tga", 14, 32, 32, 17, 0, nil)
+AddAnimated("Badvibes.tga", 32, 128, 32, 5, 0, 3.000)
+AddAnimated("BangerBand.tga", 4, 128, 32, 50, 0, 3.000)
+AddAnimated("BonePls.tga", 24, 32, 32, 25, 0, nil)
+AddAnimated("BoneZone.tga", 29, 32, 32, 21, 0, nil)
+AddAnimated("BoneZoneOverheat.tga", 7, 32, 32, 50, 0, nil)
+AddAnimated("BrotherEww.tga", 32, 32, 32, 3, 0, 1.250)
+AddAnimated("Bwaaa.tga", 32, 32, 32, 2, 0, nil)
+AddAnimated("Callit.tga", 32, 32, 32, 13, 0, nil)
+AddAnimated("ClapHD.tga", 32, 32, 32, 17, 0, nil)
+AddAnimated("Clublit.tga", 31, 32, 32, 12, 0, nil)
+AddAnimated("Cooked.tga", 32, 32, 32, 10, 0, nil)
+AddAnimated("FallDamage.tga", 32, 32, 32, 28, 4, nil)
+AddAnimated("FastestHotDogShooter.tga", 32, 32, 32, 8, 0, nil)
+AddAnimated("FeelsBadLurk.tga", 32, 32, 32, 7, 5, nil)
+AddAnimated("Freestyle.tga", 32, 32, 32, 6, 0, nil)
+AddAnimated("HYPERPANTS.tga", 2, 32, 32, 20, 0, nil)
+AddAnimated("HitTheRoad.tga", 32, 32, 32, 6, 0, nil)
+AddAnimated("Hotdog.tga", 32, 32, 32, 7, 0, nil)
+AddAnimated("Jigglin.tga", 32, 32, 32, 16, 0, nil)
+AddAnimated("JustDoIt.tga", 32, 32, 32, 9, 0, nil)
+AddAnimated("KEKDance.tga", 32, 32, 32, 28, 0, nil)
+AddAnimated("KEKSquats.tga", 2, 32, 32, 5, 0, nil)
+AddAnimated("LOTTADAMAGE.tga", 32, 32, 32, 21, 0, nil)
+AddAnimated("Nuthin.tga", 32, 32, 32, 16, 0, nil)
+AddAnimated("PEPEJAM.tga", 8, 32, 32, 14, 0, 1.125)
+AddAnimated("PepeDoor.tga", 24, 32, 32, 10, 0, nil)
+AddAnimated("PressF5.tga", 2, 32, 32, 20, 0, nil)
+AddAnimated("REROLL.tga", 17, 32, 32, 10, 0, nil)
+AddAnimated("SEverywhere.tga", 32, 32, 32, 3, 0, nil)
+AddAnimated("Sucks.tga", 32, 32, 32, 13, 0, nil)
+AddAnimated("TANTIES.tga", 10, 32, 32, 8, 0, nil)
+AddAnimated("ThatsBait.tga", 32, 32, 32, 11, 0, 1.188)
+AddAnimated("WAYTOODANK.tga", 32, 32, 32, 10, 4, nil)
+AddAnimated("Walking.tga", 12, 32, 32, 8, 0, nil)
+AddAnimated("WalterVibe.tga", 32, 64, 32, 4, 0, 1.781)
+AddAnimated("WhoYouThinkYouAreIAM.tga", 32, 32, 32, 5, 0, nil)
+AddAnimated("YAPP.tga", 2, 32, 32, 12, 0, nil)
+AddAnimated("Yapping.tga", 32, 32, 32, 17, 0, nil)
+AddAnimated("dogJAM.tga", 10, 32, 32, 14, 0, nil)
+AddAnimated("gachiRoll.tga", 32, 32, 32, 15, 1, nil)
+AddAnimated("grandpaLeave.tga", 32, 32, 32, 5, 1, nil)
+AddAnimated("inthewoods.tga", 32, 32, 32, 2, 0, nil)
+AddAnimated("monkaSTEER.tga", 24, 32, 32, 20, 0, 1.094)
+AddAnimated("monkaStandoff.tga", 20, 64, 32, 11, 0, 1.750)
+AddAnimated("peepoArrive.tga", 28, 32, 32, 8, 9, nil)
+AddAnimated("peepoFinger.tga", 32, 32, 32, 8, 0, nil)
+AddAnimated("peepoLift.tga", 7, 32, 32, 17, 0, nil)
+AddAnimated("pepeRun.tga", 6, 32, 32, 20, 0, nil)
+AddAnimated("pepeSmoke.tga", 24, 32, 32, 7, 0, nil)
+AddAnimated("pirateD.tga", 13, 32, 32, 17, 0, nil)
+AddAnimated("pugPls.tga", 32, 32, 32, 13, 0, nil)
+AddAnimated("rightThere.tga", 28, 32, 32, 15, 0, nil)
+AddAnimated("seqA1.tga", 32, 32, 32, 15, 0, nil)
+AddAnimated("seqDied.tga", 32, 32, 32, 6, 0, nil)
+AddAnimated("seqDinkDonk.tga", 2, 32, 32, 20, 0, nil)
+AddAnimated("seqHo.tga", 32, 32, 32, 8, 0, nil)
+AddAnimated("seqOK.tga", 32, 32, 32, 6, 0, nil)
+AddAnimated("seqPls.tga", 21, 32, 32, 14, 0, nil)
+AddAnimated("seqToot.tga", 22, 32, 32, 10, 0, nil)
+AddAnimated("shitsFucked.tga", 18, 32, 32, 20, 0, nil)
+
+-- Batch 2
+AddAnimated("DANCE1.tga", 45, 32, 32, 17, 0, nil)
+AddAnimated("FluteDudeJam.tga", 64, 32, 32, 12, 0, nil)
+AddAnimated("GLORPGETSFUCKINGEXPLODED.tga", 60, 32, 32, 17, 0, nil)
+AddAnimated("PETTHETYPE.tga", 5, 32, 32, 25, 0, nil)
+AddAnimated("SerSus.tga", 2, 32, 32, 1, 0, nil)
+AddAnimated("ServalStareA.tga", 2, 32, 32, 6, 0, nil)
+AddAnimated("StonerChamp.tga", 26, 32, 32, 10, 0, nil)
+AddAnimated("VietNaMeseManWavingHisGun.tga", 64, 32, 32, 8, 0, nil)
+AddAnimated("WOT.tga", 64, 32, 32, 13, 0, 1.062)
+AddAnimated("Wiggle.tga", 9, 32, 32, 25, 0, nil)
+AddAnimated("dracthyrNod.tga", 5, 32, 32, 9, 0, nil)
+AddAnimated("dropkick.tga", 64, 32, 32, 13, 0, nil)
+AddAnimated("gahretChat.tga", 8, 32, 32, 30, 0, nil)
+AddAnimated("gahretDigem.tga", 23, 32, 32, 17, 0, nil)
+AddAnimated("gahretGun.tga", 46, 32, 32, 10, 0, nil)
+AddAnimated("gahretHMMM.tga", 11, 32, 32, 10, 0, nil)
+AddAnimated("gahretHard.tga", 17, 32, 32, 15, 0, nil)
+AddAnimated("gahretJamge.tga", 29, 32, 32, 30, 0, nil)
+AddAnimated("gahretKneel.tga", 47, 32, 32, 17, 0, nil)
+AddAnimated("gahretLurk.tga", 54, 32, 32, 25, 0, nil)
+AddAnimated("gahretMadness.tga", 3, 32, 32, 8, 0, nil)
+AddAnimated("gahretO7.tga", 16, 32, 32, 8, 0, nil)
+AddAnimated("gahretOngf.tga", 15, 32, 32, 15, 0, nil)
+AddAnimated("gahretPop.tga", 20, 32, 32, 10, 0, nil)
+AddAnimated("gahretUppies.tga", 6, 32, 32, 10, 0, nil)
+AddAnimated("gahretWoo.tga", 8, 32, 32, 15, 0, nil)
+AddAnimated("jamalkCreep.tga", 10, 32, 32, 10, 0, nil)
+AddAnimated("jemalkAyo.tga", 60, 32, 32, 24, 0, nil)
+AddAnimated("jemalkBreakin.tga", 10, 32, 32, 10, 0, nil)
+AddAnimated("jemalkDance.tga", 31, 32, 32, 10, 0, nil)
+AddAnimated("jemalkJam.tga", 10, 32, 32, 20, 0, nil)
+AddAnimated("jemalkJim.tga", 60, 32, 32, 24, 0, nil)
+AddAnimated("jemalkLick.tga", 41, 32, 32, 30, 0, nil)
+AddAnimated("jemalkLook.tga", 20, 32, 32, 5, 0, nil)
+AddAnimated("jemalkPpboy.tga", 19, 32, 32, 5, 0, nil)
+AddAnimated("jemalkRIP.tga", 16, 32, 32, 5, 2, nil)
+AddAnimated("jemalkRumba.tga", 20, 32, 32, 10, 0, nil)
+AddAnimated("jemalkSmug.tga", 11, 32, 32, 3, 0, nil)
+AddAnimated("jemalkStfu.tga", 16, 32, 32, 5, 0, nil)
+AddAnimated("jemalkYoink.tga", 20, 32, 32, 10, 2, nil)
+AddAnimated("keyboardCat.tga", 48, 32, 32, 30, 0, nil)
+AddAnimated("nekocathi.tga", 15, 32, 32, 10, 0, nil)
+AddAnimated("peepoPantsWalkInThighs.tga", 64, 32, 32, 6, 0, nil)
+AddAnimated("CouldYouNot.tga", 30, 32, 32, 20, 0, nil)
+AddAnimated("LookUp.tga", 23, 32, 32, 20, 0, nil)
+AddAnimated("PeepoBricks.tga", 21, 32, 32, 20, 0, nil)
+AddAnimated("PeepoLELELE.tga", 3, 32, 32, 20, 0, nil)
+AddAnimated("PepeMLADY.tga", 9, 32, 32, 20, 0, nil)
+AddAnimated("TakeMyPants.tga", 16, 32, 32, 20, 0, nil)
+AddAnimated("ThisIsFine.tga", 4, 32, 32, 20, 0, nil)
+AddAnimated("angrybear.tga", 21, 41, 32, 20, 0, nil)
+AddAnimated("babyYodaSip.tga", 68, 32, 32, 20, 0, nil)
+AddAnimated("coffinRIP.tga", 70, 32, 32, 20, 0, nil)
+AddAnimated("dogWAT.tga", 59, 32, 32, 20, 0, nil)
+AddAnimated("druidVIBE.tga", 250, 32, 32, 20, 0, nil)
+AddAnimated("peepoBonk.tga", 10, 32, 32, 20, 0, nil)
+AddAnimated("peepoEvil.tga", 133, 32, 32, 20, 0, nil)
+AddAnimated("peepoHawOnAGoose.tga", 15, 32, 32, 20, 0, nil)
+AddAnimated("peepoLeave.tga", 30, 32, 32, 20, 0, nil)
+AddAnimated("peepoNoob.tga", 6, 32, 32, 20, 0, nil)
+AddAnimated("peepoRain.tga", 15, 32, 32, 20, 0, nil)
+AddAnimated("peepoSax.tga", 18, 32, 32, 20, 0, nil)
+AddAnimated("peepoSnow.tga", 24, 32, 32, 20, 0, nil)
+AddAnimated("peepoTrip.tga", 80, 32, 32, 20, 0, nil)
+AddAnimated("peepoWine.tga", 17, 32, 32, 20, 0, nil)
+AddAnimated("pikeHi.tga", 15, 32, 32, 20, 0, nil)
+AddAnimated("vibePls.tga", 138, 32, 32, 20, 0, nil)
+AddAnimated("wowPls.tga", 103, 32, 32, 20, 0, nil)
