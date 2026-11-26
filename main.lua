@@ -429,7 +429,6 @@ local function UpdateEmoteBrowserPage()
 
         if not name then
             cell.frame:Hide()
-            cell.animMeta = nil
         else
             cell.frame:Show()
 
@@ -454,12 +453,6 @@ local function UpdateEmoteBrowserPage()
                     or (TwitchEmotes_animation_metadata and TwitchEmotes_animation_metadata[texturePath]))
                 or nil
 
-            -- Remember animation metadata so the browser OnUpdate can advance frames.
-            cell.animMeta = nil
-            if type(meta) == "table" and meta.nFrames and meta.nFrames > 1 and meta.imageHeight and meta.imageHeight > 0 then
-                cell.animMeta = meta
-            end
-
             if type(meta) == "table" and meta.grid and meta.imageWidth and meta.imageHeight then
                 local frameWidth = tonumber(meta.frameWidth) or 32
                 local frameHeight = tonumber(meta.frameHeight) or 32
@@ -469,7 +462,6 @@ local function UpdateEmoteBrowserPage()
                     0,
                     frameHeight / meta.imageHeight
                 )
-                cell.animMeta = nil -- grid sheets not animated in browser yet
             elseif type(meta) == "table" and meta.nFrames and meta.imageHeight and meta.imageHeight > 0 then
                 local frameHeight = tonumber(meta.frameHeight) or 32
                 local pf = tonumber(meta.previewFrame) or 0
@@ -502,42 +494,6 @@ local function UpdateEmoteBrowserPage()
     end
 end
 
-
-local browserAnimElapsed = 0
-local BROWSER_ANIM_INTERVAL = 0.033
-
-local function AnimateBrowserEmotes(elapsed)
-    if not emoteBrowser or not emoteBrowser:IsShown() then
-        return
-    end
-
-    browserAnimElapsed = browserAnimElapsed + (elapsed or 0)
-    if browserAnimElapsed < BROWSER_ANIM_INTERVAL then
-        return
-    end
-    browserAnimElapsed = 0
-
-    local now = GetTime()
-    for i = 1, BROWSER_PER_PAGE do
-        local cell = emoteCells[i]
-        local meta = cell and cell.animMeta
-        if meta and cell.icon and cell.frame and cell.frame:IsShown() then
-            local nFrames = tonumber(meta.nFrames) or 1
-            local frameHeight = tonumber(meta.frameHeight) or 32
-            local imageHeight = tonumber(meta.imageHeight) or (frameHeight * nFrames)
-            local framerate = tonumber(meta.framerate) or 18
-            if nFrames > 1 and imageHeight > 0 and framerate > 0 then
-                local frameIndex = math.floor(now * framerate) % nFrames
-                cell.icon:SetTexCoord(
-                    0, 1,
-                    (frameIndex * frameHeight) / imageHeight,
-                    ((frameIndex + 1) * frameHeight) / imageHeight
-                )
-            end
-        end
-    end
-end
-
 ToggleEmoteBrowser = function()
     if not emoteBrowser then
         emoteBrowser = CreateFrame("Frame", "GSCTwitchEmotesBrowser", UIParent, "BackdropTemplate")
@@ -552,9 +508,6 @@ ToggleEmoteBrowser = function()
         emoteBrowser:RegisterForDrag("LeftButton")
         emoteBrowser:SetScript("OnDragStart", emoteBrowser.StartMoving)
         emoteBrowser:SetScript("OnDragStop", emoteBrowser.StopMovingOrSizing)
-        emoteBrowser:SetScript("OnUpdate", function(_, elapsed)
-            AnimateBrowserEmotes(elapsed)
-        end)
         emoteBrowser:SetScript("OnMouseWheel", function(_, delta)
             if delta > 0 then
                 if currentEmotePage > 1 then
